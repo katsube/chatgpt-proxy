@@ -16,13 +16,18 @@ const express = require('express')
 const dotenv = require('dotenv')
 const app  = express()
 
+const responseData = require('./lib/responseData')
+
 // Router setting
 const router = require('./routes');
 
 //------------------------------------------
 // Constant
 //------------------------------------------
-const ENV = process.env.NODE_ENV || 'develop'
+if( process.env.NODE_ENV === undefined){
+  process.env.NODE_ENV = 'develop'
+}
+const ENV = process.env.NODE_ENV
 
 //------------------------------------------
 // Load .env
@@ -74,20 +79,22 @@ else{
 
   // 404
   app.use((req, res, next) => {
-    if( !('result' in res.locals) ){
-      res.locals.result = {status: 404, data: {'message':'Not Found'}}
+    const status = responseData.get('status')
+    if( ! status ){
+      responseData.errorClient({message: 'Not Found'}, 404)
     }
     next()
   });
 
   // response
   app.use((req, res, next)=>{
-    const result = res.locals.result
+    const status = responseData.get('status')
+    const data   = responseData.get('data')
 
     res
-      .status(result.status)
+      .status(status)
       .set('Connection', 'close')
-      .json(result.data)
+      .json(data)
 
     next();
   })
